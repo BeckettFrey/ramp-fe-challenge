@@ -61,11 +61,13 @@ export function App() {
             label: `${item.firstName} ${item.lastName}`,
           })}
           onChange={async (newValue) => {
-            if (newValue === null) {
-              return
-            }
+            if (newValue === null) return
 
-            await loadTransactionsByEmployee(newValue.id)
+            if (newValue.id === EMPTY_EMPLOYEE.id) {
+              await loadAllTransactions()
+            } else {
+              await loadTransactionsByEmployee(newValue.id)
+            }
           }}
         />
 
