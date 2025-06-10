@@ -26,9 +26,30 @@ export function usePaginatedTransactions(): PaginatedTransactionsResult {
     })
   }, [fetchWithCache, paginatedTransactions])
 
+  const fetchNextPage = useCallback(async () => {
+    const pageToLoad = paginatedTransactions === null ? 0 : paginatedTransactions.nextPage
+
+    const response = await fetchWithCache<PaginatedResponse<Transaction[]>, PaginatedRequestParams>(
+      "paginatedTransactions",
+      { page: pageToLoad }
+    )
+
+    setPaginatedTransactions((prev) => {
+      if (prev === null || response === null) {
+        return response
+      }
+
+      return {
+        data: [...prev.data, ...response.data],
+        nextPage: response.nextPage,
+      }
+  })
+  
+  }, [fetchWithCache, paginatedTransactions])
+
   const invalidateData = useCallback(() => {
     setPaginatedTransactions(null)
   }, [])
 
-  return { data: paginatedTransactions, loading, fetchAll, invalidateData }
+  return { data: paginatedTransactions, loading, fetchAll, fetchNextPage, invalidateData }
 }
