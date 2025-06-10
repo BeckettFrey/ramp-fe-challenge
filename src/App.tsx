@@ -7,16 +7,47 @@ import { usePaginatedTransactions } from "./hooks/usePaginatedTransactions"
 import { useTransactionsByEmployee } from "./hooks/useTransactionsByEmployee"
 import { EMPTY_EMPLOYEE } from "./utils/constants"
 import { Employee } from "./utils/types"
+import { useCustomFetch } from "./hooks/useCustomFetch"
+import { SetTransactionApprovalParams } from "./utils/types"
 
 export function App() {
   const { data: employees, ...employeeUtils } = useEmployees()
   const { data: paginatedTransactions, ...paginatedTransactionsUtils } = usePaginatedTransactions()
   const { data: transactionsByEmployee, ...transactionsByEmployeeUtils } = useTransactionsByEmployee()
+  const { fetchWithoutCache, loading } = useCustomFetch()
 
   const transactions = useMemo(
     () => paginatedTransactions?.data ?? transactionsByEmployee ?? null,
     [paginatedTransactions, transactionsByEmployee]
   )
+
+  const [approvalMap, setApprovalMap] = useState<Record<string, boolean>>({})
+
+  const setTransactionApproval = useCallback(
+    async ({ transactionId, newValue }: { transactionId: string; newValue: boolean }) => {
+      const previousValue = approvalMap[transactionId]
+
+      setApprovalMap((prev) => ({
+        ...prev,
+        [transactionId]: newValue,
+      }))
+
+      try {
+        await fetchWithoutCache<void, SetTransactionApprovalParams>("setTransactionApproval", {
+          transactionId,
+          value: newValue,
+        })
+      } catch (err) {
+        console.error("Failed to persist to backend", err)
+        setApprovalMap((prev) => ({
+          ...prev,
+          [transactionId]: previousValue,
+        }))
+      }
+    },
+    [approvalMap, fetchWithoutCache]
+  )
+
 
   const loadAllTransactions = useCallback(async () => {
     transactionsByEmployeeUtils.invalidateData()
@@ -74,7 +105,13 @@ export function App() {
         <div className="RampBreak--l" />
 
         <div className="RampGrid">
-          <Transactions transactions={transactions} />
+          <Transactions
+            transactions={transactions}
+            approvalMap={approvalMap}
+            loading={loading}
+            setTransactionApproval={setTransactionApproval}
+          />
+
 
           {transactions !== null && isPaginated && hasMorePages && (
             <button
