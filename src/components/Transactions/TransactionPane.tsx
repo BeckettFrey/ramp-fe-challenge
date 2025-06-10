@@ -23,11 +23,17 @@ export const TransactionPane: TransactionPaneComponent = ({
         checked={approved}
         disabled={loading}
         onChange={async (newValue) => {
-          await consumerSetTransactionApproval({
-            transactionId: transaction.id,
-            newValue,
-          })
-
+          const oldValue = approved
+          setApproved(newValue)
+          try {
+            await consumerSetTransactionApproval({
+              transactionId: transaction.id,
+              newValue,
+            })
+          } catch (error) {
+            setApproved(oldValue)
+            console.error("Failed to update transaction approval:", error)
+          }
           setApproved(newValue)
         }}
       />
