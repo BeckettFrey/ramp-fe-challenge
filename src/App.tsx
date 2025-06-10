@@ -40,6 +40,9 @@ export function App() {
     }
   }, [employeeUtils.loading, employees, loadAllTransactions])
 
+  const isPaginated = paginatedTransactions !== null
+  const hasMorePages = paginatedTransactions?.nextPage !== null
+
   return (
     <Fragment>
       <main className="MainContainer">
@@ -73,7 +76,7 @@ export function App() {
         <div className="RampGrid">
           <Transactions transactions={transactions} />
 
-          {transactions !== null && (
+          {transactions !== null && isPaginated && hasMorePages && (
             <button
               className="RampButton"
               disabled={paginatedTransactionsUtils.loading}
